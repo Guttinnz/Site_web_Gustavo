@@ -4,6 +4,15 @@ import { renderToPipeableStream } from 'react-dom/server';
 import { StaticRouter } from 'react-router-dom/server';
 import { App } from './App';
 import { I18nProvider } from './components/I18nProvider';
+import { content } from './data/content';
+
+/** Título e description (PT) que o HTML pré-renderizado de cada rota recebe no <head>. */
+export function pageHead(url: string): { title: string; description: string } {
+  const t = content.pt;
+  if (url === '/') return t.meta;
+  if (url === '/qualidade') return { title: t.quality.metaTitle, description: t.quality.metaDescription };
+  return { title: `${t.notFound.title} | Gustavo Bueno`, description: t.meta.description };
+}
 
 /**
  * Renderiza uma rota para HTML no build (usado por scripts/prerender.mjs).

@@ -169,6 +169,7 @@ const svg = (width, height, body) =>
 /* ----------------------------------------------------------------------------- */
 
 const CASES = [
+  { file: 'work-qa', index: 'QA', kicker: 'Este portfólio · QA case', lines: ['Este site', 'é testado'], stat: 'Cypress · axe · Lighthouse' },
   { file: 'work-icatu', index: '01', kicker: '2025–2026 · Automação E2E', lines: ['Icatu Seguros', 'Previdência'], stat: '5.200h economizadas' },
   { file: 'work-ivy', index: '02', kicker: '2023–2025 · Multiprojeto', lines: ['Grupo IVY', 'AutoAvaliar · RwTech'], stat: '1.500+ validações' },
   { file: 'work-going2', index: '03', kicker: '2022–2023 · QA / CI', lines: ['Going2', 'Do zero ao pipeline'], stat: 'Cypress + BrowserStack' },

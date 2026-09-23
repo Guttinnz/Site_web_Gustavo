@@ -1,0 +1,232 @@
+# Portão de qualidade: nada vai ao ar sem passar em todos os testes.
+#
+#   build ──┬── Cypress web ─────┬── relatório ── deploy na Vercel (só na main)
+#           ├── Cypress mobile ──┤
+#           └── Lighthouse CI ───┘
+#
+# Em pull requests roda tudo, menos o deploy. Na main, publica após um push ou um
+# "Run workflow" manual. O deploy automático da Vercel pelo Git está desligado
+# (vercel.json → git.deploymentEnabled: false): quem publica é este workflow, com os
+# resultados dos testes embutidos no site (página /qualidade e selo do rodapé).
+#
+# Segredos necessários (GitHub → Settings → Secrets and variables → Actions):
+#   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID  — passo a passo em docs/DEPLOY.md
+name: QA
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qa-${{ github.ref }}
+  # Em PR, um push novo cancela a execução anterior; na main, cada deploy termina.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: Lint, typecheck e build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CYPRESS_INSTALL_BINARY: 0 # este job não roda o Cypress: pula o download do binário
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Lint (ESLint + regras de acessibilidade)
+        run: npm run lint
+
+      - name: Build (typecheck, Vite, pré-render e verificações)
+        run: npm run build
+
+      - name: Guardar o site compilado
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist
+          retention-days: 7
+
+  e2e:
+    name: Cypress ${{ matrix.device }}
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        device: [web, mobile]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: Baixar o site compilado
+        uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist
+
+      - name: Testes Cypress (${{ matrix.device }})
+        uses: cypress-io/github-action@v7
+        with:
+          browser: chrome
+          start: npm run preview:test
+          wait-on: http://localhost:4173
+          expose: device=${{ matrix.device }}
+          summary-title: Cypress ${{ matrix.device }}
+
+      - name: Guardar resultados
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: cypress-${{ matrix.device }}
+          path: cypress/results
+          retention-days: 14
+          if-no-files-found: ignore
+
+  lighthouse:
+    name: Lighthouse CI
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CYPRESS_INSTALL_BINARY: 0
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Baixar o site compilado
+        uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist
+
+      - name: Lighthouse (celular, 3 medições por página, metas mínimas)
+        run: npm run test:lighthouse
+
+      - name: Guardar relatórios
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: lighthouse
+          path: .lighthouseci
+          include-hidden-files: true
+          retention-days: 14
+          if-no-files-found: ignore
+
+  report:
+    name: Relatório de qualidade
+    needs: [e2e, lighthouse]
+    if: ${{ !cancelled() && needs.e2e.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: Baixar resultados do Cypress
+        uses: actions/download-artifact@v8
+        with:
+          pattern: cypress-*
+          path: cypress/results
+          merge-multiple: true
+
+      - name: Baixar relatórios do Lighthouse
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          name: lighthouse
+          path: .lighthouseci
+
+      - name: Gerar qa-results.json e o resumo desta execução
+        run: npm run qa:report
+
+      - name: Guardar qa-results.json
+        uses: actions/upload-artifact@v7
+        with:
+          name: qa-results
+          path: src/data/qa-results.json
+          retention-days: 7
+
+  deploy:
+    name: Deploy na Vercel (produção)
+    needs: [e2e, lighthouse, report]
+    # Push na main, ou "Run workflow" manual na main (ex.: depois de mudar uma variável na Vercel).
+    if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && needs.e2e.result == 'success' && needs.lighthouse.result == 'success' && needs.report.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      CYPRESS_INSTALL_BINARY: 0
+    steps:
+      # Enquanto a Vercel não estiver configurada, os testes rodam normalmente e o deploy só avisa.
+      - name: Conferir os segredos da Vercel
+        id: secrets
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "::warning title=Deploy pulado::Configure VERCEL_TOKEN, VERCEL_ORG_ID e VERCEL_PROJECT_ID (docs/DEPLOY.md)."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v7
+        if: steps.secrets.outputs.ready == 'true'
+
+      - uses: actions/setup-node@v7
+        if: steps.secrets.outputs.ready == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Usar os resultados aprovados nesta execução
+        if: steps.secrets.outputs.ready == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: qa-results
+          path: src/data
+
+      - name: Baixar a configuração do projeto na Vercel
+        if: steps.secrets.outputs.ready == 'true'
+        run: npx --yes vercel@59.25.4 pull --yes --environment=production --token="$VERCEL_TOKEN"
+
+      - name: Build de produção (com os resultados dos testes)
+        if: steps.secrets.outputs.ready == 'true'
+        run: npx --yes vercel@59.25.4 build --prod --token="$VERCEL_TOKEN"
+
+      - name: Publicar
+        id: deploy
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          url=$(npx --yes vercel@59.25.4 deploy --prebuilt --prod --token="$VERCEL_TOKEN")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "### 🚀 Publicado: $url" >> "$GITHUB_STEP_SUMMARY"

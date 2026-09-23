@@ -8,6 +8,7 @@ import { Home } from './pages/Home';
 
 // A Home fica no bundle inicial (é ela que pinta o LCP); o resto é carregado sob demanda.
 const NotFound = lazy(() => import('./pages/NotFound'));
+const Quality = lazy(() => import('./pages/Quality'));
 const Footer = lazy(() => import('./sections/Footer'));
 
 export function App() {
@@ -20,6 +21,14 @@ export function App() {
       <main id="conteudo" tabIndex={-1} className="relative z-10">
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route
+            path="/qualidade"
+            element={
+              <Suspense fallback={null}>
+                <Quality />
+              </Suspense>
+            }
+          />
           <Route
             path="*"
             element={

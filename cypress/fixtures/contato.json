@@ -1,0 +1,26 @@
+{
+  "recrutadora": {
+    "nome": "Ana Recrutadora",
+    "email": "ana.recrutadora@empresa.com.br",
+    "assunto": "Vaga CLT",
+    "mensagem": "Olá, Gustavo! Temos uma vaga remota de QA Sênior e gostaríamos de conversar."
+  },
+  "nomeCurto": {
+    "nome": "A",
+    "email": "ana@empresa.com.br",
+    "assunto": "Consultoria",
+    "mensagem": "Mensagem com o tamanho mínimo exigido."
+  },
+  "emailInvalido": {
+    "nome": "Ana Recrutadora",
+    "email": "ana-sem-arroba.empresa.com.br",
+    "assunto": "Projeto PJ / freela",
+    "mensagem": "Mensagem com o tamanho mínimo exigido."
+  },
+  "mensagemCurta": {
+    "nome": "Ana Recrutadora",
+    "email": "ana@empresa.com.br",
+    "assunto": "Outro assunto",
+    "mensagem": "Oi"
+  }
+}

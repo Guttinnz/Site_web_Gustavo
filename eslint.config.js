@@ -27,6 +27,17 @@ export default defineConfig(
     },
   },
   {
+    // Testes Cypress: `expect(x).to.be.true` e afins são expressões sem atribuição.
+    files: ['cypress/**/*.ts', 'cypress.config.ts'],
+    extends: [js.configs.recommended, tseslint.configs.strict],
+    languageOptions: { globals: { ...globals.browser, ...globals.node } },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/no-unused-expressions': 'off',
+      '@typescript-eslint/no-namespace': 'off',
+    },
+  },
+  {
     files: ['scripts/**/*.mjs', '*.config.js'],
     extends: [js.configs.recommended],
     languageOptions: { globals: globals.node },

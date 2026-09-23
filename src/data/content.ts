@@ -11,7 +11,7 @@
 
 export type Locale = 'pt' | 'en';
 export type SectionId = 'work' | 'career' | 'about' | 'services' | 'contact';
-export type CaseSlug = 'icatu' | 'ivy' | 'going2' | 'tcc' | 'n8n';
+export type CaseSlug = 'qa' | 'icatu' | 'ivy' | 'going2' | 'tcc' | 'n8n';
 export type ServiceIcon =
   | 'e2e'
   | 'workflows'
@@ -21,7 +21,7 @@ export type ServiceIcon =
   | 'performance'
   | 'design'
   | 'strategy';
-export type FaqId = 'who' | 'tools' | 'work-model' | 'results' | 'english' | 'contact';
+export type FaqId = 'who' | 'tools' | 'work-model' | 'results' | 'english' | 'site-qa' | 'contact';
 export type MarqueeStyle = 'outline' | 'accent' | 'solid';
 
 export interface ImageAsset {
@@ -177,6 +177,9 @@ export interface Content {
     /** `{year}` é trocado pelo ano do build. */
     readonly copyright: string;
     readonly analyticsNote: string;
+    /** Selo "este site é testado". Em `qaBadgeDetail`, {total} e {performance} vêm dos resultados. */
+    readonly qaBadge: string;
+    readonly qaBadgeDetail: string;
     readonly form: {
       readonly title: string;
       readonly name: string;
@@ -213,6 +216,41 @@ export interface Content {
   };
   readonly faq: readonly FaqItem[];
   readonly notFound: { readonly title: string; readonly text: string; readonly back: string };
+  /** Página /qualidade — o dashboard dos testes deste site. */
+  readonly quality: {
+    readonly metaTitle: string;
+    readonly metaDescription: string;
+    readonly label: string;
+    readonly title: string;
+    readonly intro: string;
+    readonly statusPassed: string;
+    readonly statusFailed: string;
+    readonly ranOn: string;
+    readonly sourceCi: string;
+    readonly sourceLocal: string;
+    readonly viewRun: string;
+    readonly totalLabel: string;
+    readonly passedLabel: string;
+    readonly suites: Readonly<Record<'web' | 'mobile', string>>;
+    readonly categories: Readonly<Record<'bdd' | 'a11y' | 'api' | 'tecnico', string>>;
+    readonly a11yTitle: string;
+    /** {checks} e {violations} vêm dos resultados. */
+    readonly a11yText: string;
+    readonly lighthouseTitle: string;
+    readonly lighthouseNote: string;
+    readonly lighthouseLabels: Readonly<Record<'performance' | 'accessibility' | 'bestPractices' | 'seo', string>>;
+    readonly noLighthouse: string;
+    readonly pipelineTitle: string;
+    readonly pipelineSteps: readonly { readonly title: string; readonly text: string }[];
+    readonly gateNote: string;
+    readonly exampleTitle: string;
+    readonly exampleNote: string;
+    readonly toolsTitle: string;
+    readonly tools: readonly string[];
+    readonly codeLink: string;
+    readonly historyLink: string;
+    readonly back: string;
+  };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -229,6 +267,12 @@ export const site = {
   linkedin: 'https://www.linkedin.com/in/gustavoarbueno',
   linkedinRecommendations: 'https://www.linkedin.com/in/gustavoarbueno/details/recommendations/',
   github: 'https://github.com/Guttinnz',
+  /** Repositório público do site — o código dos testes e o histórico de execuções. */
+  repository: {
+    url: 'https://github.com/Guttinnz/Site_web_Gustavo',
+    tests: 'https://github.com/Guttinnz/Site_web_Gustavo/tree/main/cypress',
+    runs: 'https://github.com/Guttinnz/Site_web_Gustavo/actions/workflows/qa.yml',
+  },
   cv: '/cv-gustavo-bueno.pdf',
   profileImage: { name: 'profile', width: 800, height: 800 },
   /**
@@ -236,6 +280,8 @@ export const site = {
    * `url` opcional: com endereço, o case ganha um link (o texto vem de `linkLabel`).
    */
   cases: [
+    // Links que começam com "/" são internos (abrem no próprio site).
+    { slug: 'qa', image: { name: 'work-qa', width: 1280, height: 720 }, url: '/qualidade' },
     { slug: 'icatu', image: { name: 'work-icatu', width: 1280, height: 720 } },
     { slug: 'ivy', image: { name: 'work-ivy', width: 1280, height: 720 } },
     { slug: 'going2', image: { name: 'work-going2', width: 1280, height: 720 } },
@@ -363,6 +409,16 @@ const pt: Content = {
     clientsLabel: 'Projetos atendidos',
     linkPending: 'em breve',
     cases: {
+      qa: {
+        period: '2026',
+        category: 'Automação E2E / BDD / CI',
+        title: 'Este portfólio — QA do próprio site',
+        description:
+          'O site que você está vendo é testado a cada mudança: cenários BDD em Gherkin (PT-BR) para os fluxos de negócio e testes em TypeScript para acessibilidade, API, SEO e responsividade, rodando em web e mobile com Cypress. O Lighthouse CI cobra metas mínimas de performance e acessibilidade, e um portão de qualidade no GitHub Actions só publica na Vercel o que passou em tudo.',
+        tags: ['Cypress', 'Gherkin/BDD', 'axe-core', 'Lighthouse CI', 'GitHub Actions'],
+        imageAlt: 'Dashboard de qualidade deste site com os resultados dos testes automatizados',
+        linkLabel: 'Ver os testes',
+      },
       icatu: {
         period: '2025–2026',
         category: 'Automação E2E / Seguros',
@@ -626,6 +682,8 @@ const pt: Content = {
     cv: 'Baixar CV',
     copyright: '© {year} Gustavo Bueno · Santa Rosa, RS',
     analyticsNote: 'Este site usa estatísticas de visita anônimas, sem cookies.',
+    qaBadge: 'Este site é testado',
+    qaBadgeDetail: '{total} testes automatizados · acessibilidade WCAG 2.2 AA · Lighthouse {performance}',
     form: {
       title: 'Ou mande uma mensagem por aqui',
       name: 'Nome',
@@ -698,6 +756,12 @@ const pt: Content = {
         'Sim. Tem inglês nível B2 (intermediário avançado) e usa documentação, ferramentas e comunicação técnica em inglês no dia a dia.',
     },
     {
+      id: 'site-qa',
+      question: 'Como este site é testado?',
+      answer:
+        'Com testes automatizados em Cypress, em web e mobile: cenários BDD em Gherkin para os fluxos de negócio, checagem de acessibilidade com axe (WCAG 2.2 AA), testes da API do formulário e Lighthouse com metas mínimas. Tudo roda no GitHub Actions a cada mudança, e o site só vai ao ar se passar. Os resultados estão na página "Qualidade", no rodapé.',
+    },
+    {
       id: 'contact',
       question: 'Como falar com ele?',
       answer:
@@ -708,6 +772,64 @@ const pt: Content = {
     title: 'Página não encontrada',
     text: 'O link que você seguiu não existe — mas o portfólio sim.',
     back: 'Voltar ao início',
+  },
+  quality: {
+    metaTitle: 'Qualidade deste site | Gustavo Bueno',
+    metaDescription:
+      'Dashboard dos testes automatizados deste portfólio: Cypress em web e mobile, BDD em Gherkin, acessibilidade WCAG 2.2 AA com axe e Lighthouse CI, com portão de qualidade no GitHub Actions.',
+    label: 'Qualidade deste site',
+    title: 'Este site é testado',
+    intro:
+      'Cada mudança passa por uma bateria de testes automatizados antes de ir ao ar. Se um teste falha, o deploy não acontece. Os números abaixo são da execução que publicou esta versão do site.',
+    statusPassed: 'Aprovado em todos os testes',
+    statusFailed: 'Há testes falhando nesta execução',
+    ranOn: 'Executado em {date}',
+    sourceCi: 'GitHub Actions',
+    sourceLocal: 'execução local',
+    viewRun: 'Ver a execução no GitHub',
+    totalLabel: 'testes automatizados',
+    passedLabel: 'aprovados',
+    suites: {
+      web: 'Web · Chrome em tela de desktop',
+      mobile: 'Mobile · tela de celular com toque',
+    },
+    categories: {
+      bdd: 'Cenários BDD (Gherkin)',
+      a11y: 'Acessibilidade',
+      api: 'API do formulário',
+      tecnico: 'Técnicos (SEO, carregamento, responsivo, conteúdo)',
+    },
+    a11yTitle: 'Acessibilidade',
+    a11yText: '{checks} estados da página verificados com axe-core · {violations} violações · padrão WCAG 2.2 AA',
+    lighthouseTitle: 'Lighthouse',
+    lighthouseNote: 'Mediana de 3 medições no perfil de celular, com rede e CPU limitadas.',
+    lighthouseLabels: {
+      performance: 'Performance',
+      accessibility: 'Acessibilidade',
+      bestPractices: 'Boas práticas',
+      seo: 'SEO',
+    },
+    noLighthouse: 'Sem medição do Lighthouse nesta execução.',
+    pipelineTitle: 'Como funciona',
+    pipelineSteps: [
+      { title: 'Push no GitHub', text: 'Toda mudança dispara o workflow de QA no GitHub Actions.' },
+      { title: 'Lint e typecheck', text: 'ESLint (com regras de acessibilidade) e TypeScript estrito.' },
+      { title: 'Build com verificações', text: 'Pré-render do HTML; o build falha se faltar seção, h1 ou arquivo linkado.' },
+      { title: 'Cypress web', text: 'Cenários BDD e testes técnicos em tela de desktop.' },
+      { title: 'Cypress mobile', text: 'Os mesmos fluxos em tela de celular, com toque emulado.' },
+      { title: 'Acessibilidade', text: 'axe-core em cada estado da página: menu, chat, erros do formulário, 404.' },
+      { title: 'Lighthouse CI', text: 'Metas mínimas: Performance ≥ 90 e Acessibilidade ≥ 95 no celular.' },
+      { title: 'Deploy', text: 'Só se tudo passar, o GitHub Actions publica na Vercel com estes resultados.' },
+    ],
+    gateNote:
+      'Portão de qualidade: se qualquer etapa falha, nada vai ao ar. A versão publicada sempre passou em todos os testes.',
+    exampleTitle: 'Um cenário real, executado a cada deploy',
+    exampleNote: 'Arquivo cypress/e2e/features/contato.feature, escrito em Gherkin.',
+    toolsTitle: 'Ferramentas',
+    tools: ['Cypress', 'Gherkin / Cucumber', 'Testing Library', 'axe-core', 'Lighthouse CI', 'GitHub Actions', 'Vercel'],
+    codeLink: 'Ver o código dos testes',
+    historyLink: 'Histórico de execuções',
+    back: 'Voltar ao portfólio',
   },
 };
 
@@ -766,6 +888,16 @@ const en: Content = {
     clientsLabel: 'Projects',
     linkPending: 'coming soon',
     cases: {
+      qa: {
+        period: '2026',
+        category: 'E2E Automation / BDD / CI',
+        title: 'This portfolio — QA of the site itself',
+        description:
+          'The site you are looking at is tested on every change: BDD scenarios in Gherkin (Portuguese) for the business flows and TypeScript tests for accessibility, API, SEO and responsiveness, running on web and mobile with Cypress. Lighthouse CI enforces minimum performance and accessibility targets, and a quality gate in GitHub Actions only publishes to Vercel what passed everything.',
+        tags: ['Cypress', 'Gherkin/BDD', 'axe-core', 'Lighthouse CI', 'GitHub Actions'],
+        imageAlt: "Quality dashboard of this site with the automated test results",
+        linkLabel: 'See the tests',
+      },
       icatu: {
         period: '2025–2026',
         category: 'E2E Automation / Insurance',
@@ -1029,6 +1161,8 @@ const en: Content = {
     cv: 'Download CV (Portuguese)',
     copyright: '© {year} Gustavo Bueno · Santa Rosa, Brazil',
     analyticsNote: 'This site uses anonymous visit statistics, with no cookies.',
+    qaBadge: 'This site is tested',
+    qaBadgeDetail: '{total} automated tests · WCAG 2.2 AA accessibility · Lighthouse {performance}',
     form: {
       title: 'Or send a message right here',
       name: 'Name',
@@ -1100,6 +1234,12 @@ const en: Content = {
         'Yes. He has B2 (upper-intermediate) English and uses English documentation, tools and technical communication every day.',
     },
     {
+      id: 'site-qa',
+      question: 'How is this site tested?',
+      answer:
+        'With automated Cypress tests on web and mobile: BDD scenarios in Gherkin for the business flows, accessibility checks with axe (WCAG 2.2 AA), tests for the contact form API and Lighthouse with minimum targets. Everything runs in GitHub Actions on every change, and the site only goes live if it passes. The results are on the "Quality" page, linked in the footer.',
+    },
+    {
       id: 'contact',
       question: 'How can I reach him?',
       answer:
@@ -1110,6 +1250,63 @@ const en: Content = {
     title: 'Page not found',
     text: "The link you followed doesn't exist — but the portfolio does.",
     back: 'Back to home',
+  },
+  quality: {
+    metaTitle: 'Quality of this site | Gustavo Bueno',
+    metaDescription:
+      "Dashboard of this portfolio's automated tests: Cypress on web and mobile, BDD in Gherkin, WCAG 2.2 AA accessibility with axe and Lighthouse CI, behind a quality gate in GitHub Actions.",
+    label: 'Quality of this site',
+    title: 'This site is tested',
+    intro:
+      'Every change goes through a suite of automated tests before going live. If a test fails, the deploy does not happen. The numbers below come from the run that published this version of the site.',
+    statusPassed: 'Passed every test',
+    statusFailed: 'Some tests are failing in this run',
+    ranOn: 'Run on {date}',
+    sourceCi: 'GitHub Actions',
+    sourceLocal: 'local run',
+    viewRun: 'See the run on GitHub',
+    totalLabel: 'automated tests',
+    passedLabel: 'passed',
+    suites: {
+      web: 'Web · Chrome on a desktop screen',
+      mobile: 'Mobile · phone screen with touch',
+    },
+    categories: {
+      bdd: 'BDD scenarios (Gherkin)',
+      a11y: 'Accessibility',
+      api: 'Contact form API',
+      tecnico: 'Technical (SEO, loading, responsive, content)',
+    },
+    a11yTitle: 'Accessibility',
+    a11yText: '{checks} page states checked with axe-core · {violations} violations · WCAG 2.2 AA standard',
+    lighthouseTitle: 'Lighthouse',
+    lighthouseNote: 'Median of 3 runs on the mobile profile, with throttled network and CPU.',
+    lighthouseLabels: {
+      performance: 'Performance',
+      accessibility: 'Accessibility',
+      bestPractices: 'Best practices',
+      seo: 'SEO',
+    },
+    noLighthouse: 'No Lighthouse measurement in this run.',
+    pipelineTitle: 'How it works',
+    pipelineSteps: [
+      { title: 'Push to GitHub', text: 'Every change triggers the QA workflow in GitHub Actions.' },
+      { title: 'Lint and typecheck', text: 'ESLint (with accessibility rules) and strict TypeScript.' },
+      { title: 'Build with checks', text: 'HTML pre-rendering; the build fails if a section, h1 or linked file is missing.' },
+      { title: 'Cypress web', text: 'BDD scenarios and technical tests on a desktop screen.' },
+      { title: 'Cypress mobile', text: 'The same flows on a phone screen, with emulated touch.' },
+      { title: 'Accessibility', text: 'axe-core on every page state: menu, chat, form errors, 404.' },
+      { title: 'Lighthouse CI', text: 'Minimum targets: Performance ≥ 90 and Accessibility ≥ 95 on mobile.' },
+      { title: 'Deploy', text: 'Only if everything passes, GitHub Actions publishes to Vercel with these results.' },
+    ],
+    gateNote: 'Quality gate: if any step fails, nothing goes live. The published version always passed every test.',
+    exampleTitle: 'A real scenario, run on every deploy',
+    exampleNote: 'File cypress/e2e/features/contato.feature, written in Gherkin (in Portuguese).',
+    toolsTitle: 'Tools',
+    tools: ['Cypress', 'Gherkin / Cucumber', 'Testing Library', 'axe-core', 'Lighthouse CI', 'GitHub Actions', 'Vercel'],
+    codeLink: 'See the test code',
+    historyLink: 'Run history',
+    back: 'Back to the portfolio',
   },
 };
 

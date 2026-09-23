@@ -1,0 +1,26 @@
+{
+  "ci": {
+    "collect": {
+      "startServerCommand": "npm run preview:test",
+      "startServerReadyPattern": "Local",
+      "url": ["http://localhost:4173/", "http://localhost:4173/qualidade"],
+      "numberOfRuns": 3,
+      "settings": {
+        "skipAudits": ["is-on-https", "redirects-http"],
+        "blockedUrlPatterns": ["*kaspersky-labs.com*", "*.scr.kaspersky-labs.com*"]
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["error", { "minScore": 0.9, "aggregationMethod": "median-run" }],
+        "categories:accessibility": ["error", { "minScore": 0.95, "aggregationMethod": "median-run" }],
+        "categories:seo": ["error", { "minScore": 0.9, "aggregationMethod": "median-run" }],
+        "categories:best-practices": ["warn", { "minScore": 0.9, "aggregationMethod": "median-run" }]
+      }
+    },
+    "upload": {
+      "target": "filesystem",
+      "outputDir": ".lighthouseci/relatorios"
+    }
+  }
+}

@@ -2,8 +2,9 @@
  * Pré-renderiza as páginas para HTML estático (último passo do `npm run build`) e
  * faz algumas verificações que derrubam o build se algo sair errado.
  *
- *   dist/index.html → Home completa (inclusive o rodapé, que é lazy no cliente)
- *   dist/404.html   → página 404 (a Vercel serve este arquivo para rotas inexistentes)
+ *   dist/index.html     → Home completa (inclusive o rodapé, que é lazy no cliente)
+ *   dist/qualidade.html → dashboard dos testes (servido em /qualidade via cleanUrls)
+ *   dist/404.html       → página 404 (a Vercel serve este arquivo para rotas inexistentes)
  */
 import { createHash } from 'node:crypto';
 import fs from 'node:fs/promises';
@@ -17,14 +18,39 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = path.join(ROOT, 'dist');
 const SSR = path.join(ROOT, 'dist-ssr');
 
-const { render } = await import(pathToFileURL(path.join(SSR, 'entry-server.js')).href);
+const { render, pageHead } = await import(pathToFileURL(path.join(SSR, 'entry-server.js')).href);
 const template = await fs.readFile(path.join(DIST, 'index.html'), 'utf8');
 
 // `route` vai para <div id="root" data-route>: o main.tsx só hidrata se bater com a URL.
 const PAGES = [
   { url: '/', route: 'home', file: 'index.html', head: '', mustContain: ['id="work"', 'id="career"', 'id="about"', 'id="services"', 'id="recommendations"', 'id="contact"'] },
+  { url: '/qualidade', route: 'quality', file: 'qualidade.html', head: '', mustContain: ['id="quality-title"', 'id="pipeline-title"', 'id="contact"'] },
   { url: '/404', route: 'not-found', file: '404.html', head: '<meta name="robots" content="noindex" />', mustContain: ['404', 'id="contact"'] },
 ];
+
+const escapeAttr = (value) => value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+
+/** Título, description, canonical e Open Graph próprios para cada página que não é a Home. */
+function applyHead(html, url) {
+  if (url === '/') return html;
+  const { title, description } = pageHead(url);
+  const t = escapeAttr(title);
+  const d = escapeAttr(description);
+  let out = html
+    .replace(/<title>[^<]*<\/title>/, `<title>${t}</title>`)
+    .replace(/(name="description"\s+content=")[^"]*(")/, `$1${d}$2`)
+    .replace(/(property="og:title" content=")[^"]*(")/, `$1${t}$2`)
+    .replace(/(name="twitter:title" content=")[^"]*(")/, `$1${t}$2`)
+    .replace(/(property="og:description"\s+content=")[^"]*(")/, `$1${d}$2`)
+    .replace(/(name="twitter:description"\s+content=")[^"]*(")/, `$1${d}$2`);
+  if (url === '/404') {
+    // noindex + canonical apontando para a Home são sinais conflitantes para o buscador.
+    return out.replace(/\s*<link rel="canonical" href="[^"]*" \/>/, '');
+  }
+  return out
+    .replace(/(<link rel="canonical" href="[^"]*?)\/(")/, `$1${url}$2`)
+    .replace(/(property="og:url" content="[^"]*?)\/(")/, `$1${url}$2`);
+}
 
 const problems = [];
 
@@ -33,7 +59,10 @@ if (template.includes('__SITE_URL__')) problems.push('marcador __SITE_URL__ não
 
 for (const page of PAGES) {
   const appHtml = await render(page.url);
-  let html = template.replace('<div id="root"><!--app-html-->', `<div id="root" data-route="${page.route}">${appHtml}`);
+  let html = applyHead(template, page.url).replace(
+    '<div id="root"><!--app-html-->',
+    `<div id="root" data-route="${page.route}">${appHtml}`,
+  );
   if (page.head) html = html.replace('</head>', `  ${page.head}\n  </head>`);
 
   const h1Count = (appHtml.match(/<h1[\s>]/g) ?? []).length;

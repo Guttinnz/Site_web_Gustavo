@@ -1,9 +1,11 @@
 import { ArrowRight } from 'lucide-react';
 import { PillLink } from '../components/PillLink';
 import { useI18n } from '../hooks/useI18n';
+import { usePageMeta } from '../hooks/usePageMeta';
 
 export default function NotFound() {
   const { t } = useI18n();
+  usePageMeta(`${t.notFound.title} | Gustavo Bueno`, t.meta.description);
 
   return (
     <section className="container flex min-h-[80vh] flex-col items-start justify-center pb-16 pt-32">

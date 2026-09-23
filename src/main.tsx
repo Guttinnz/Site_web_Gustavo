@@ -28,7 +28,8 @@ if (!container) throw new Error('Elemento #root não encontrado no index.html.')
 
 // Em produção o HTML já vem pré-renderizado (scripts/prerender.mjs) e só é hidratado —
 // desde que seja o da rota atual (um servidor pode responder qualquer URL com o index.html).
-const currentRoute = window.location.pathname === '/' ? 'home' : 'not-found';
+const ROUTES: Record<string, string> = { '/': 'home', '/qualidade': 'quality' };
+const currentRoute = ROUTES[window.location.pathname.replace(/(.)\/$/, '$1')] ?? 'not-found';
 if (container.firstElementChild && container.dataset.route === currentRoute) {
   hydrateRoot(container, app);
 } else {

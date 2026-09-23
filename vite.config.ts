@@ -55,6 +55,10 @@ function seoPlugin(siteUrl: string): Plugin {
     generateBundle() {
       if (isSsrBuild) return;
       const today = new Date().toISOString().slice(0, 10);
+      const pages = [
+        { path: '/', priority: '1.0' },
+        { path: '/qualidade', priority: '0.6' },
+      ];
       this.emitFile({
         type: 'asset',
         fileName: 'robots.txt',
@@ -66,7 +70,10 @@ function seoPlugin(siteUrl: string): Plugin {
         source: [
           '<?xml version="1.0" encoding="UTF-8"?>',
           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-          `  <url><loc>${siteUrl}/</loc><lastmod>${today}</lastmod><changefreq>monthly</changefreq><priority>1.0</priority></url>`,
+          ...pages.map(
+            (page) =>
+              `  <url><loc>${siteUrl}${page.path}</loc><lastmod>${today}</lastmod><changefreq>monthly</changefreq><priority>${page.priority}</priority></url>`,
+          ),
           '</urlset>',
           '',
         ].join('\n'),

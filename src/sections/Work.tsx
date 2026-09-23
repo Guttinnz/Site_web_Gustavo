@@ -1,4 +1,4 @@
-import { ArrowUpRight, FileText } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, FileText } from 'lucide-react';
 import { Picture } from '../components/Picture';
 import { PillLink } from '../components/PillLink';
 import { RevealOnScroll } from '../components/RevealOnScroll';
@@ -62,7 +62,12 @@ export function Work() {
                     ))}
                   </ul>
                   {item.linkLabel &&
-                    (url ? (
+                    (url?.startsWith('/') && !url.endsWith('.pdf') ? (
+                      // Link interno (ex.: /qualidade): abre no próprio site.
+                      <PillLink href={url} icon={ArrowRight} variant="solid" className="mt-6">
+                        {item.linkLabel}
+                      </PillLink>
+                    ) : url ? (
                       <PillLink
                         href={url}
                         target="_blank"

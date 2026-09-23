@@ -7,10 +7,9 @@ Como o portfólio é construído, publicado e servido. O passo a passo para publ
 ```mermaid
 flowchart LR
   dev["Você<br/>(VS Code)"] -- "git push" --> gh["GitHub<br/>repositório"]
-  gh -- "GitHub Actions" --> ci["CI<br/>lint + build"]
-  gh -- "integração Git" --> build["Vercel Build<br/>npm ci + npm run build"]
-  build --> cdn["CDN da Vercel<br/>HTML pré-renderizado, JS, CSS,<br/>imagens, CV em PDF"]
-  build --> fn["Função /api/contact<br/>Node.js 24"]
+  gh --> qa["GitHub Actions — QA<br/>lint, build, Cypress web + mobile,<br/>axe, Lighthouse CI"]
+  qa -- "só se tudo passar<br/>vercel deploy --prebuilt" --> cdn["CDN da Vercel<br/>HTML pré-renderizado, JS, CSS,<br/>imagens, CV em PDF"]
+  qa -- "só se tudo passar" --> fn["Função /api/contact<br/>Node.js 24"]
   visitante["Visitante"] --> cdn
   visitante -- "formulário (POST)" --> fn
   fn -- "RESEND_API_KEY" --> resend["Resend<br/>(envio de e-mail)"]
@@ -26,9 +25,9 @@ flowchart LR
 
 | Componente | Onde roda | Papel |
 |---|---|---|
-| Repositório | GitHub | Código-fonte. Cada push na `main` gera um deploy de produção. |
-| CI (`.github/workflows/ci.yml`) | GitHub Actions | Roda lint e build em cada push e pull request. Mostra ✅/❌ no GitHub. |
-| Build | Vercel | `npm ci` + `npm run build`, com Node 24 (definido em `package.json` → `engines`). |
+| Repositório | GitHub (público) | Código-fonte e testes. Cada push na `main` dispara o workflow de QA. |
+| QA (`.github/workflows/qa.yml`) | GitHub Actions | Lint, build, Cypress (web e mobile), axe e Lighthouse CI em cada push e pull request. Na `main`, publica na Vercel **só se tudo passar**. |
+| Build de produção | GitHub Actions (`vercel build`) | `npm ci` + `npm run build`, com Node 24 e os resultados dos testes embutidos. O deploy automático da Vercel pelo Git está desligado (`vercel.json` → `git.deploymentEnabled: false`). |
 | Site | CDN da Vercel | Arquivos de `dist/`: páginas, JS, CSS, fontes, imagens, PDFs. |
 | `api/contact.ts` | Vercel Functions (Node.js, região padrão `iad1`) | Valida o formulário, aplica o limite por IP e envia pelo Resend. |
 | Resend | SaaS externo | Entrega o e-mail no seu Gmail. O botão "Responder" responde direto ao visitante. |
@@ -50,13 +49,36 @@ A função roda em Washington (`iad1`), perto da API do Resend, que fica nos EUA
    - algum link apontar para um arquivo que não existe;
    - o hash do script inline não bater com a CSP do `vercel.json`.
 
-Se o build falha, a Vercel **não publica** e a versão anterior continua no ar.
+Se o build falha, nada é publicado e a versão anterior continua no ar.
+
+## Portão de qualidade (GitHub Actions)
+
+```mermaid
+flowchart LR
+  push["push / pull request"] --> build["build<br/>lint + typecheck + build"]
+  build --> web["Cypress web<br/>1440×900"]
+  build --> mobile["Cypress mobile<br/>390×844, toque"]
+  build --> lh["Lighthouse CI<br/>celular, 3 medições"]
+  web --> report["relatório<br/>qa-results.json"]
+  mobile --> report
+  lh --> report
+  report -- "push na main<br/>e tudo verde" --> deploy["deploy<br/>vercel build + deploy --prebuilt"]
+```
+
+- **build:** o mesmo `npm run build` de sempre. O `dist/` vai como artefato para os jobs seguintes, então todos testam exatamente o mesmo site.
+- **Cypress web e mobile** (em paralelo): cenários BDD em Gherkin (PT-BR) e testes técnicos em TypeScript contra o `vite preview`, que serve o `dist/` e a função do formulário em modo simulação. Detalhes em [README → Testes automatizados](../README.md#testes-automatizados).
+- **Lighthouse CI:** mediana de 3 medições no perfil de celular, na Home e em `/qualidade`. Falha se Performance < 90, Acessibilidade < 95 ou SEO < 90.
+- **relatório:** `scripts/qa-report.mjs` junta os resultados em `src/data/qa-results.json` e escreve o resumo na página da execução.
+- **deploy:** só em push na `main` e só se todos os jobs passaram. Refaz o build com o `qa-results.json` desta execução, então a página `/qualidade` e o selo do rodapé mostram os números da versão que está no ar. Sem os segredos da Vercel configurados, o job apenas avisa e não publica.
+
+Os resultados dos testes (resumos, screenshots de falhas, relatórios do Lighthouse) ficam como artefatos da execução por 14 dias.
 
 ## Rotas e cache
 
 | Caminho | O que é | Cache |
 |---|---|---|
 | `/` | `index.html` pré-renderizado | Padrão da Vercel. Cada deploy invalida o cache. |
+| `/qualidade` | `qualidade.html` pré-renderizado (`cleanUrls`), dashboard dos testes | Padrão |
 | qualquer rota inexistente | `404.html`, com status 404 | Padrão |
 | `/assets/*` | JS, CSS e fontes, com hash no nome | 1 ano, `immutable` |
 | `/images/*` | Imagens otimizadas | 1 dia, mais 7 dias de `stale-while-revalidate` |
@@ -81,8 +103,8 @@ Toda variável alterada só vale **no próximo deploy**: use *Redeploy*.
 
 | Ambiente | Quando | Endereço |
 |---|---|---|
-| Produção | Push ou merge na `main` | `https://<projeto>.vercel.app` (ou o seu domínio) |
-| Preview | Push em outra branch ou pull request | URL única por deploy, protegida por login da Vercel e fora do Google (`noindex` automático) |
+| Produção | Push ou merge na `main`, **depois de passar em todos os testes** | `https://<projeto>.vercel.app` (ou o seu domínio) |
+| Pull request | Push em outra branch com PR aberto | Os testes rodam e o resultado aparece no PR. Não há deploy de preview (o deploy pelo Git está desligado); para ver a mudança, use `npm run preview`. |
 | Local | `npm run dev` / `npm run preview` | `localhost`. O formulário só simula o envio, a menos que exista `RESEND_API_KEY` no `.env.local`. |
 
 ## Segurança
@@ -101,13 +123,14 @@ Toda variável alterada só vale **no próximo deploy**: use *Redeploy*.
   - campo invisível contra robôs;
   - tempo mínimo desde a abertura da página;
   - tempo máximo de execução de 10 s.
-- **Pré-visualizações** (preview) exigem login na Vercel por padrão e não são indexadas.
+- **Teste de segredos:** a cada execução, `seo.cy.ts` varre o JavaScript publicado atrás de formatos de chave (Resend, Google, OpenAI, GitHub) e dos valores das variáveis sensíveis do ambiente.
+- **Token de deploy** (`VERCEL_TOKEN`) fica só nos segredos do GitHub, usado apenas pelo job de deploy, que só roda em push na `main` (nunca em pull request de terceiros).
 
 ## Custos e limites
 
 | Serviço | Plano | Limites relevantes |
 |---|---|---|
-| GitHub | Free | Repositório público ou privado; 2.000 min/mês de Actions em repositório privado (ilimitado em público). |
+| GitHub | Free | Repositório público: Actions ilimitado. Cada execução do QA leva cerca de 5 a 7 minutos de runner. |
 | Vercel | Hobby (grátis) | 100 GB de tráfego/mês, 1 milhão de execuções de função/mês, 50 mil eventos de Analytics/mês. **Só para uso pessoal não comercial** (veja abaixo). |
 | Resend | Free | 3.000 e-mails/mês, 100 por dia. Sem domínio próprio, só entrega para o e-mail dono da conta. |
 

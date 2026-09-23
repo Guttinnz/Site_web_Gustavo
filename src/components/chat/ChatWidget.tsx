@@ -106,7 +106,16 @@ export default function ChatWidget() {
           </button>
         </header>
 
-        <div ref={logRef} role="log" aria-live="polite" className="flex-1 space-y-3 overflow-y-auto px-4 py-4 text-sm">
+        {/* Focável para quem usa só o teclado conseguir rolar as respostas longas (WCAG 2.1.1). */}
+        <div
+          ref={logRef}
+          role="log"
+          aria-live="polite"
+          aria-labelledby="faq-title"
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+          tabIndex={0}
+          className="focus-ring flex-1 space-y-3 overflow-y-auto px-4 py-4 text-sm"
+        >
           <p className="max-w-[85%] rounded-2xl rounded-tl-sm bg-white/5 px-4 py-3 leading-relaxed text-fg-muted">
             {t.chat.greeting}
           </p>

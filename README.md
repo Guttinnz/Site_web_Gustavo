@@ -1,6 +1,14 @@
 # Portfólio — Gustavo Bueno · Engenheiro de Software (Qualidade e Automações)
 
+[![QA](https://github.com/Guttinnz/Site_web_Gustavo/actions/workflows/qa.yml/badge.svg)](https://github.com/Guttinnz/Site_web_Gustavo/actions/workflows/qa.yml)
+![Cypress](https://img.shields.io/badge/E2E-Cypress%2016-69D3A7?logo=cypress&logoColor=white)
+![BDD](https://img.shields.io/badge/BDD-Gherkin%20PT--BR-23D96C?logo=cucumber&logoColor=white)
+![Acessibilidade](https://img.shields.io/badge/acessibilidade-WCAG%202.2%20AA-1F6FEB)
+![Lighthouse](https://img.shields.io/badge/Lighthouse%20CI-perf%20%E2%89%A5%2090-F44B21?logo=lighthouse&logoColor=white)
+
 Site one-page, bilíngue (PT-BR / EN), com fundo de partículas em WebGL, hospedado na Vercel.
+
+**Este site é um case de QA.** Cada mudança passa por testes automatizados em Cypress (web e mobile), checagem de acessibilidade com axe e Lighthouse CI no GitHub Actions. O deploy só acontece se tudo passar. Os resultados da versão no ar aparecem na página **/qualidade** do site. Detalhes em [Testes automatizados](#testes-automatizados).
 
 **Stack:** React 18 · TypeScript (strict) · Vite 8 · Tailwind CSS 3 · React Router 6 · three.js · lucide-react · Oswald e Manrope self-hosted (@fontsource) · Vercel Functions + Resend (formulário).
 
@@ -27,6 +35,12 @@ npm run dev        # http://localhost:5173
 | `npm run check` | Lint + build completo. Rode antes de cada push: é o mesmo que o CI roda no GitHub. |
 | `npm run images` | Gera AVIF/WebP/JPEG em `public/images/opt` (roda sozinho no dev e no build). |
 | `npm run placeholders` | Recria imagens provisórias, OG, favicons e CV de exemplo (veja abaixo). |
+| `npm run qa` | O portão de qualidade completo na sua máquina: build → Cypress web e mobile → Lighthouse → `qa-results.json` → build de novo. |
+| `npm run test:e2e` | Sobe o `dist/` em http://localhost:4173 e roda o Cypress web e depois o mobile. Precisa de um `npm run build` antes. |
+| `npm run test:web` / `test:mobile` | Uma suíte só, com o servidor já rodando (`npm run preview:test` em outro terminal). |
+| `npm run cy:open` / `cy:open:mobile` | Cypress com interface, para ver cada teste passo a passo. |
+| `npm run test:lighthouse` | Lighthouse CI: 3 medições no perfil de celular, na Home e em `/qualidade`, com metas mínimas. |
+| `npm run qa:report` | Junta os resultados em `src/data/qa-results.json` (os números da página `/qualidade`). |
 
 ---
 
@@ -35,26 +49,29 @@ npm run dev        # http://localhost:5173
 ```
 src/
 ├── data/content.ts      ← TODO o texto do site (PT e EN), contatos, trajetória, stack, certificações
+├── data/qa-results.json ← resultados da última execução dos testes (gerado por scripts/qa-report.mjs)
 ├── sections/            ← Hero, Impact, Work, Career, About (+ marquee), Services, Footer
 ├── components/          ← CustomCursor, Background3D, RevealOnScroll, CountUp, Marquee,
 │   │                      Header, MobileMenu, LanguageToggle, I18nProvider, Picture…
 │   └── chat/            ← widget de FAQ (QA-Bot)
 ├── hooks/               ← useI18n, useInView, useReducedMotion, useFocusTrap, useIdle…
-├── pages/               ← Home e NotFound (404)
+├── pages/               ← Home, Quality (/qualidade, dashboard dos testes) e NotFound (404)
 ├── styles/index.css     ← tokens de design (cores), utilitários, regras de reduced-motion
 ├── main.tsx             ← entrada do navegador (hidrata o HTML pré-renderizado)
 └── entry-server.tsx     ← entrada do pré-render (usada só no build)
 api/contact.ts           ← função da Vercel do formulário (única com chave secreta)
-scripts/                 ← images.mjs, placeholders.mjs, prerender.mjs
+cypress/                 ← testes automatizados (veja "Testes automatizados")
+scripts/                 ← images.mjs, placeholders.mjs, prerender.mjs, qa-report.mjs
 public/                  ← imagens, favicons, og-image.jpg, cv-gustavo-bueno.pdf
 docs/                    ← ARQUITETURA.md e DEPLOY.md
-.github/workflows/ci.yml ← CI: lint + build a cada push e pull request
+.github/workflows/qa.yml ← portão de qualidade: testes a cada push/PR e deploy só se tudo passar
+lighthouserc.json        ← metas do Lighthouse CI
 vercel.json              ← build, headers de segurança/CSP, cache e limite da função
 ```
 
 ### Como a página carrega
 
-- **HTML pré-renderizado.** No build, `scripts/prerender.mjs` gera o HTML completo da Home (`dist/index.html`) e da 404 (`dist/404.html`). O texto aparece antes do JavaScript, o que é bom para o LCP e para buscadores. Depois o React hidrata e a página vira uma SPA normal.
+- **HTML pré-renderizado.** No build, `scripts/prerender.mjs` gera o HTML completo da Home (`dist/index.html`), da página de qualidade (`dist/qualidade.html`) e da 404 (`dist/404.html`), cada uma com título e descrição próprios. O texto aparece antes do JavaScript, o que é bom para o LCP e para buscadores. Depois o React hidrata e a página vira uma SPA normal.
 - **Bundle inicial** (~66 kB gzip): React, Router, Header, Hero e as seções.
 - **Sob demanda** (`React.lazy`):
   - three.js/Background3D (~131 kB gzip), só depois do `load` e com o navegador ocioso, e nunca com `prefers-reduced-motion`;
@@ -83,6 +100,7 @@ Sobrescreva o arquivo em `public/images/` **mantendo o nome**:
 |---|---|---|
 | `profile.jpg` | Foto da seção Sobre | quadrado (1:1), com foco automático |
 | `work-icatu.jpg`, `work-ivy.jpg`, `work-going2.jpg`, `work-tcc.jpg`, `work-n8n.jpg` | Capas dos cases | 16:9, centralizado |
+| `work-qa.jpg` | Capa do case "Este portfólio" (já é um print real do `/qualidade`) | 16:9 |
 
 A imagem pode ter qualquer tamanho (de preferência ≥ 1280 px de largura), em `.jpg` ou `.png`. O `npm run images` gera as versões AVIF, WebP e JPEG em 2 larguras. Ele roda sozinho no `dev` e no `build`.
 
@@ -130,8 +148,8 @@ O botão "Baixar CV" entrega `public/cv-gustavo-bueno.pdf`, o seu CV real. Para 
 
 O passo a passo completo está em **[docs/DEPLOY.md](docs/DEPLOY.md)**: GitHub, Vercel, Resend, verificação pós-deploy, domínio próprio e problemas comuns. A arquitetura está em **[docs/ARQUITETURA.md](docs/ARQUITETURA.md)**.
 
-Resumo: cada push na `main` gera um deploy de produção. O `vercel.json` já define:
-- instalação (`npm ci`), build (`npm run build`) e saída (`dist`);
+Resumo: cada push na `main` roda o workflow **QA** no GitHub Actions, que publica na Vercel **só se todos os testes passarem** (o deploy pelo Git da Vercel está desligado). O `vercel.json` já define:
+- instalação (`npm ci`, sem baixar o binário do Cypress), build (`npm run build`) e saída (`dist`);
 - os headers de segurança;
 - o tempo máximo da função do formulário.
 
@@ -174,6 +192,58 @@ O Speed Insights também é ativado automaticamente no domínio da Vercel. Para 
 
 ---
 
+## Testes automatizados
+
+O próprio site é um case de QA: **124 testes** em duas suítes (web e mobile), rodando a cada push e pull request no GitHub Actions. Resultado da última execução local (23/09/2026): 124/124 aprovados, 15 estados da página verificados com axe e 0 violações, Lighthouse 92/100/100/100.
+
+| Tipo | Formato | Onde | O que cobre |
+|---|---|---|---|
+| Fluxos de negócio | **Gherkin em PT-BR** (BDD) | `cypress/e2e/features/*.feature` | Navegação e menu mobile, troca de idioma, formulário de contato (erros, envio, limite de mensagens), QA-Bot, o que um recrutador procura (CV, recomendações, WhatsApp, selo de testes) |
+| Acessibilidade | TypeScript + axe-core | `cypress/e2e/tecnico/acessibilidade.cy.ts` | WCAG 2.0/2.1/2.2 A e AA em cada estado: Home PT/EN, reduced motion, QA-Bot aberto, formulário com erros, 404, `/qualidade`, menu mobile |
+| API do formulário | TypeScript | `cypress/e2e/tecnico/api-contato.cy.ts` | Contrato do `POST /api/contact`: 200, 400 (campos e `too_fast`), honeypot, 429 com `Retry-After`, 413, 415, 405 e envio sem JavaScript |
+| Técnicos | TypeScript | `cypress/e2e/tecnico/*.cy.ts` | SEO e metadados, **nenhum segredo no bundle**, carregamento (HTML pronto, sem terceiros, three.js só depois do `load`, console sem erros), responsividade em 9 larguras, integridade de links e imagens, dashboard `/qualidade`, cursor e cabeçalho |
+| Performance | Lighthouse CI | `lighthouserc.json` | Mediana de 3 medições no celular: Performance ≥ 90, Acessibilidade ≥ 95, SEO ≥ 90 |
+
+**Dois perfis** (`--expose device=web|mobile`, em `cypress.config.ts`):
+- **web:** 1440×900, mouse, cenários sem a tag `@mobile`;
+- **mobile:** 390×844, toque emulado pelo Chrome DevTools Protocol e user agent de iPhone, cenários sem a tag `@web`. API, SEO e conteúdo rodam só no web, porque não dependem da tela.
+
+**Como está organizado:**
+```
+cypress/
+├── e2e/features/        ← cenários em Gherkin (# language: pt)
+├── e2e/steps/           ← step definitions em TypeScript
+├── e2e/tecnico/         ← testes técnicos em TypeScript
+├── fixtures/contato.json← massas de teste do formulário
+├── support/             ← comandos (visitSite, fillContactForm, checkA11y…), perfis web/mobile
+└── plugins/             ← resumo da execução e varredura de segredos no bundle
+```
+
+- Os textos esperados vêm do próprio `src/data/content.ts`: mudar um texto do site não quebra os testes.
+- Seletores por papel e rótulo acessível (Testing Library), como um usuário ou leitor de tela encontraria o elemento.
+- O formulário é testado contra o mesmo código da função da Vercel, em modo simulação (nenhum e-mail é enviado). Cada teste usa um "IP" próprio, para o limite de mensagens não vazar de um teste para outro.
+- O cenário `contato.feature` aparece na íntegra na página `/qualidade`, como exemplo.
+
+**Rodando na sua máquina** (precisa do Google Chrome instalado):
+```powershell
+npm run build
+npm run test:e2e          # web + mobile, ~2 minutos
+npm run test:lighthouse   # ~2 minutos
+npm run qa:report         # atualiza os números da página /qualidade
+```
+
+> Se o Cypress disser `bad option: --smoke-test`, o terminal está com a variável `ELECTRON_RUN_AS_NODE` (alguns terminais integrados definem). Rode `Remove-Item Env:ELECTRON_RUN_AS_NODE` no PowerShell e tente de novo.
+
+**No GitHub Actions** (`.github/workflows/qa.yml`): build → Cypress web e mobile em paralelo → Lighthouse CI → relatório → deploy. O deploy só roda na `main` e só se tudo passou, e refaz o build com os resultados da execução. Assim, a página `/qualidade` e o selo do rodapé sempre mostram os números da versão que está no ar. O resumo de cada execução aparece na aba **Actions**, e os screenshots de falhas e os relatórios do Lighthouse ficam como artefatos.
+
+**Onde o trabalho aparece no site:**
+- selo "Este site é testado" no rodapé, com o total de testes e a nota do Lighthouse;
+- página `/qualidade`: dashboard com os números, o pipeline e o cenário Gherkin real;
+- case "Este portfólio", o primeiro da seção Trabalhos;
+- pergunta "Como este site é testado?" no QA-Bot.
+
+**O que os testes já encontraram:** a área de conversa do QA-Bot rolava, mas não era alcançável pelo teclado (axe, `scrollable-region-focusable`), e a página 404 tinha `noindex` junto com um `canonical` para a Home (sinais conflitantes para o Google). Os dois foram corrigidos.
+
 ## Qualidade
 
 **O que o build verifica** (no `prerender.mjs`; se algo falhar, o deploy não sai):
@@ -204,14 +274,14 @@ O cursor customizado:
 
 **Sem JavaScript**, o HTML pré-renderizado mostra todo o conteúdo e os contatos.
 
-**Lighthouse** (build local, 23/09/2026):
+**Lighthouse CI** (celular, mediana de 3 medições, build local, 23/09/2026):
 
-| | Performance | Acessibilidade | SEO |
-|---|---|---|---|
-| Mobile | 94 | 100 | 100 |
-| Desktop | 100 | 100 | 100 |
+| Página | Performance | Acessibilidade | Boas práticas | SEO |
+|---|---|---|---|---|
+| Home | 92 | 100 | 100 | 100 |
+| `/qualidade` | 97 | 100 | 100 | 100 |
 
-Boas práticas marca 81 localmente só por falta de HTTPS. Na Vercel isso deixa de valer. Se o seu antivírus injeta scripts nas páginas (o Kaspersky faz isso), rode o Lighthouse numa janela anônima ou com `--blocked-url-patterns`, senão ele mede o script do antivírus.
+A auditoria de HTTPS fica de fora localmente (o `vite preview` é HTTP); na Vercel, o site é servido só por HTTPS. O `lighthouserc.json` bloqueia os scripts que o Kaspersky injeta nas páginas, para a nota não medir o antivírus. No DevTools do navegador, use uma janela anônima.
 
 ---
 
@@ -222,5 +292,6 @@ Boas práticas marca 81 localmente só por falta de HTTPS. Na Vercel isso deixa 
 - [ ] Colocar a foto real em `public/images/profile.jpg`
 - [ ] Colocar o PDF do TCC em `public/tcc-gustavo-bueno.pdf` e preencher `url: '/tcc-gustavo-bueno.pdf'` (`site.cases` → `tcc`)
 - [ ] Revisar a tradução EN e as respostas do FAQ em `content.ts`
+- [ ] Configurar os 3 segredos da Vercel no GitHub ([DEPLOY.md, passo 6](docs/DEPLOY.md#6-ligar-o-github-actions-à-vercel-portão-de-qualidade)); sem eles, os testes rodam, mas o deploy é pulado
 - [ ] Rodar o Lighthouse mobile na URL publicada
 - [ ] Testar só com teclado (Tab / Shift+Tab / Esc) e com reduced-motion ligado no sistema

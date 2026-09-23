@@ -1,12 +1,24 @@
-import { Download } from 'lucide-react';
+import { Download, ShieldCheck } from 'lucide-react';
+import { useEffect } from 'react';
 import { GitHubIcon, LinkedInIcon, WhatsAppIcon } from '../components/BrandIcons';
 import { ContactForm } from '../components/ContactForm';
 import { site } from '../data/content';
+import { qaResults, qaTotals } from '../data/qa';
 import { useI18n } from '../hooks/useI18n';
 
 /** Rodapé / contato. Carregado com React.lazy, mas incluído no HTML pré-renderizado. */
 export default function Footer() {
   const { t } = useI18n();
+
+  // O rodapé é a última parte a hidratar: a partir daqui a página inteira responde a
+  // cliques e teclado. Os testes automatizados esperam por este sinal.
+  useEffect(() => {
+    document.documentElement.dataset.hydrated = 'true';
+  }, []);
+
+  const qaDetail = t.contact.qaBadgeDetail
+    .replace('{total}', String(qaTotals.tests))
+    .replace('{performance}', String(qaResults.lighthouse?.performance ?? '—'));
 
   const socials = [
     { href: site.linkedin, label: t.contact.linkedin, Icon: LinkedInIcon },
@@ -51,6 +63,20 @@ export default function Footer() {
         <div className="mb-16 flex w-full justify-center">
           <ContactForm />
         </div>
+
+        {/* Selo "este site é testado": leva ao dashboard dos testes. */}
+        <a
+          href="/qualidade"
+          className="interactive focus-ring group mb-16 inline-flex max-w-full items-center gap-4 rounded-2xl border border-green-500/40 bg-green-500/10 px-5 py-4 text-left transition-colors hover:border-green-400 hover:bg-green-500/20"
+        >
+          <ShieldCheck aria-hidden="true" className="h-8 w-8 shrink-0 text-green-400" />
+          <span>
+            <span className="block font-display text-xl font-bold uppercase tracking-tight text-white group-hover:text-green-300">
+              {t.contact.qaBadge}
+            </span>
+            {qaTotals.tests > 0 && <span className="block text-sm text-fg-muted">{qaDetail}</span>}
+          </span>
+        </a>
 
         <ul className="mb-16 flex gap-8">
           {socials.map(({ href, label, Icon }) => (

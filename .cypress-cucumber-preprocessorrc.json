@@ -1,0 +1,6 @@
+{
+  "stepDefinitions": ["cypress/e2e/steps/**/*.ts"],
+  "filterSpecs": true,
+  "omitFiltered": true,
+  "filterSpecsMixedMode": "show"
+}

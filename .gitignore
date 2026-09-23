@@ -7,6 +7,10 @@ dist-ssr
 # imagens otimizadas (geradas a cada build por scripts/images.mjs)
 public/images/opt
 
+# resultados de testes (o resumo vai para src/data/qa-results.json)
+cypress/results
+.lighthouseci
+
 # ambiente — chaves e segredos NUNCA vão para o repositório
 .env
 .env.*

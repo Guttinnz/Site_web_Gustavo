@@ -39,11 +39,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  // Título e description ficam com cada página (hooks/usePageMeta).
   useEffect(() => {
-    const t = content[locale];
     document.documentElement.lang = HTML_LANG[locale];
-    document.title = t.meta.title;
-    document.querySelector('meta[name="description"]')?.setAttribute('content', t.meta.description);
     // Só revela a página quando o idioma preferido já está na tela (evita piscar PT → EN).
     if (restored) document.documentElement.classList.remove('lang-pending');
   }, [locale, restored]);
