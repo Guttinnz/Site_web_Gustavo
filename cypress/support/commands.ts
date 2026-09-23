@@ -27,18 +27,19 @@ Cypress.Commands.add('visitSite', (path = '/', options: Cypress.VisitSiteOptions
 });
 
 Cypress.Commands.add('revealAll', () => {
-  cy.window({ log: false }).then((win) => {
-    const height = win.document.documentElement.scrollHeight;
-    const step = Math.max(200, Math.floor(win.innerHeight * 0.6));
-    for (let y = 0; y <= height; y += step) {
-      cy.scrollTo(0, y, { log: false, ensureScrollable: false });
-      cy.wait(60, { log: false });
-    }
+  // Leva cada bloco até a tela e espera a animação de entrada disparar antes de seguir.
+  // Rolar em passos fixos não serve: numa máquina lenta (CI), um bloco pode passar
+  // pela tela entre dois quadros sem o IntersectionObserver perceber.
+  cy.get('.reveal', { log: false }).each(($block) => {
+    cy.wrap($block, { log: false }).scrollIntoView({ log: false }).should('have.class', 'opacity-100');
   });
   // Espera a transição de entrada (700 ms) terminar em todos os blocos.
   cy.get('.reveal', { log: false }).should(($blocks) => {
-    const hidden = $blocks.toArray().filter((el) => getComputedStyle(el).opacity !== '1');
-    expect(hidden, 'blocos ainda invisíveis').to.have.length(0);
+    const hidden = $blocks
+      .toArray()
+      .filter((el) => getComputedStyle(el).opacity !== '1')
+      .map((el) => `#${el.closest('[id]')?.id ?? '?'}`);
+    expect(hidden, 'blocos ainda invisíveis').to.deep.equal([]);
   });
 });
 

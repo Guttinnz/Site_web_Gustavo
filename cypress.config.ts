@@ -51,6 +51,19 @@ export default defineConfig({
       if (profile.userAgent) config.userAgent = profile.userAgent;
       if (profile.exclude.length > 0) config.excludeSpecPattern = [...profile.exclude];
 
+      // Tipo de ponteiro fixo por perfil: o servidor do CI não tem mouse, e o Chrome então
+      // responderia "sem ponteiro fino" também no perfil web. Web = mouse; mobile = toque.
+      on('before:browser:launch', (browser, launchOptions) => {
+        if (browser.family === 'chromium') {
+          const pointer =
+            device === 'web'
+              ? 'primaryPointerType=4,availablePointerTypes=4,primaryHoverType=2,availableHoverTypes=2'
+              : 'primaryPointerType=2,availablePointerTypes=2,primaryHoverType=1,availableHoverTypes=1';
+          launchOptions.args.push(`--blink-settings=${pointer}`);
+        }
+        return launchOptions;
+      });
+
       await addCucumberPreprocessorPlugin(on, config, { omitAfterRunHandler: true });
       on('file:preprocessor', createBundler({ plugins: [createEsbuildPlugin(config)] }));
 
