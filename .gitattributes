@@ -1,0 +1,13 @@
+# Fim de linha LF no repositório (o Windows converte na hora do checkout, se precisar).
+* text=auto eol=lf
+
+# Binários: nunca converter.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.avif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary

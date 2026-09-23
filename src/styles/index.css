@@ -1,0 +1,162 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Fonte de fallback com métricas ajustadas à Oswald (medido: Oswald Bold ≈ 77% da
+ * largura da Arial Bold). Enquanto a Oswald carrega, o título gigante ocupa quase a
+ * mesma largura — evita quebra de linha diferente e layout shift (CLS).
+ */
+@font-face {
+  font-family: 'Oswald Fallback';
+  src: local('Arial Bold'), local('Arial-BoldMT'), local('Roboto Bold'), local('Roboto-Bold'),
+    local('Helvetica Neue Bold'), local('HelveticaNeue-Bold');
+  font-weight: 700;
+  size-adjust: 77%;
+  ascent-override: 155%;
+  descent-override: 37.5%;
+  line-gap-override: 0%;
+}
+
+@layer base {
+  :root {
+    /* Design tokens — troque o acento aqui (hex + canais RGB). */
+    --bg: #0a0a0a;
+    --bg-rgb: 10 10 10;
+    --bg-elevated: #141414;
+    --fg: #ffffff;
+    --fg-muted: #d1d5db;
+    --fg-subtle: #9ca3af;
+    --accent: #22d3ee;
+    --accent-rgb: 34 211 238;
+    --accent-soft: #67e8f9;
+    --accent-soft-rgb: 103 232 249;
+    --success: #22c55e;
+    --border: rgb(255 255 255 / 0.1);
+
+    color-scheme: dark;
+  }
+
+  html {
+    background-color: var(--bg);
+    scrollbar-width: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  body {
+    @apply min-h-screen font-sans text-fg antialiased;
+    background: radial-gradient(circle at 50% 0%, #1a1a1a, #0a0a0a) var(--bg);
+  }
+
+  ::selection {
+    background-color: #fff;
+    color: #000;
+  }
+
+  /* O atributo hidden sempre vence classes de display (flex, grid…). */
+  [hidden] {
+    display: none !important;
+  }
+
+  /* Fallback de foco para qualquer elemento que não use .focus-ring. */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  [tabindex='-1']:focus {
+    outline: none;
+  }
+}
+
+@layer components {
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-black;
+  }
+
+  .section-label {
+    @apply font-mono text-sm uppercase tracking-widest text-fg-subtle;
+  }
+
+  .custom-cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 9999;
+    width: 20px;
+    height: 20px;
+    border: 1px solid #fff;
+    border-radius: 50%;
+    pointer-events: none;
+    mix-blend-mode: difference;
+    transform: translate(-100px, -100px);
+    transition:
+      width 0.3s,
+      height 0.3s,
+      background-color 0.3s,
+      opacity 0.2s;
+    will-change: transform;
+  }
+
+  .custom-cursor[data-hover='true'] {
+    width: 60px;
+    height: 60px;
+    background-color: rgb(255 255 255 / 0.1);
+  }
+
+  .custom-cursor[data-visible='false'] {
+    opacity: 0;
+  }
+}
+
+@layer utilities {
+  .text-outline {
+    -webkit-text-stroke: 1px rgb(255 255 255 / 0.5);
+    color: transparent;
+  }
+}
+
+/* O cursor nativo só some sobre elementos interativos, e só quando o cursor custom está ativo. */
+@media (hover: hover) and (pointer: fine) {
+  .has-custom-cursor :is(a, button, .interactive) {
+    cursor: none;
+  }
+}
+
+/* Visitante que escolheu EN: esconde o HTML em PT até a troca (com teto de 1,5 s). */
+.lang-pending #root {
+  visibility: hidden;
+  animation: lang-reveal 0s linear 1.5s forwards;
+}
+
+@keyframes lang-reveal {
+  to {
+    visibility: visible;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

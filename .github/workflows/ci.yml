@@ -1,0 +1,38 @@
+# Roda a cada push na main e em todo pull request: lint + typecheck + build completo
+# (o build inclui o pré-render e as verificações de h1, seções, links e CSP).
+# A Vercel faz o deploy sozinha; este workflow só impede que um erro passe despercebido.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Lint, typecheck e build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Lint (ESLint + acessibilidade)
+        run: npm run lint
+
+      - name: Build (typecheck, Vite, pré-render e verificações)
+        run: npm run build

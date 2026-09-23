@@ -1,0 +1,25 @@
+# dependências e builds
+node_modules
+dist
+dist-ssr
+*.tsbuildinfo
+
+# imagens otimizadas (geradas a cada build por scripts/images.mjs)
+public/images/opt
+
+# ambiente — chaves e segredos NUNCA vão para o repositório
+.env
+.env.*
+!.env.example
+.vercel
+
+# notas privadas — descrevem uma falha de segurança de outro site, não publicar
+prompt.md
+
+# sistema / editor
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
