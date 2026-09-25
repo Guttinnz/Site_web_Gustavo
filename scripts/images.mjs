@@ -20,6 +20,7 @@ const OUTPUT = path.join(SOURCE, 'opt');
 const PRESETS = [
   { test: /^work-/, width: 1280, height: 720, position: 'centre' },
   { test: /^profile$/, width: 800, height: 800, position: sharp.strategy.attention },
+  { test: /^hero$/, width: 800, height: 1000, position: sharp.strategy.attention },
 ];
 
 const ENCODERS = {

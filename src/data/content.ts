@@ -116,6 +116,8 @@ export interface Content {
     readonly titleLines: readonly [string, string];
     /** Subtítulo logo abaixo do título (especialização). */
     readonly specialization: string;
+    /** Texto alternativo da foto ao lado do título (`site.heroImage`). */
+    readonly photoAlt: string;
     readonly intro: string;
     readonly cta: string;
     readonly scroll: string;
@@ -274,6 +276,8 @@ export const site = {
     runs: 'https://github.com/Guttinnz/Site_web_Gustavo/actions/workflows/qa.yml',
   },
   cv: '/cv-gustavo-bueno.pdf',
+  /** Foto do topo, ao lado do título: retrato 4:5 (no celular vira um círculo). */
+  heroImage: { name: 'hero', width: 800, height: 1000 },
   profileImage: { name: 'profile', width: 800, height: 800 },
   /**
    * Ordem de exibição dos cases + imagem de cada um (public/images/<name>.jpg).
@@ -347,6 +351,7 @@ export const site = {
     { label: 'Cisco — Introdução à Cibersegurança', url: '' },
   ],
 } as const satisfies {
+  readonly heroImage: ImageAsset;
   readonly profileImage: ImageAsset;
   readonly cases: readonly { readonly slug: CaseSlug; readonly image: ImageAsset; readonly url?: string }[];
   readonly certifications: readonly Credential[];
@@ -386,6 +391,7 @@ const pt: Content = {
     eyebrow: 'Automação · Qualidade · Confiabilidade',
     titleLines: ['Engenheiro', 'de Software'],
     specialization: 'Engenheiro de Qualidade e Automações',
+    photoAlt: 'Foto de Gustavo Bueno',
     intro:
       'Seis anos de experiência fazendo o bug aparecer no pipeline — e não na tela do cliente. Construo automação que roda sozinha, falha pelo motivo certo e devolve tempo ao time: num único projeto, foram mais de 5.200 horas de regressão.',
     cta: 'Fale comigo',
@@ -865,6 +871,7 @@ const en: Content = {
     eyebrow: 'Automation · Quality · Reliability',
     titleLines: ['Software', 'Engineer'],
     specialization: 'Quality & Automation Engineer',
+    photoAlt: 'Photo of Gustavo Bueno',
     intro:
       "Six years of experience making bugs show up in the pipeline — not on the customer's screen. I build automation that runs on its own, fails for the right reason and gives time back to the team: on a single project, more than 5,200 hours of regression.",
     cta: 'Get in touch',

@@ -99,6 +99,7 @@ Sobrescreva o arquivo em `public/images/` **mantendo o nome**:
 | Arquivo | Onde aparece | Recorte |
 |---|---|---|
 | `profile.jpg` | Foto da seção Sobre | quadrado (1:1), com foco automático |
+| `hero.jpg` | Foto do topo, ao lado do título (desktop) e em círculo acima dele (celular e tablet) | retrato 4:5, de preferência 1200×1500 px ou mais, com o rosto no terço de cima |
 | `work-icatu.jpg`, `work-ivy.jpg`, `work-going2.jpg`, `work-tcc.jpg`, `work-n8n.jpg` | Capas dos cases | 16:9, centralizado |
 | `work-qa.jpg` | Capa do case "Este portfólio" (já é um print real do `/qualidade`) | 16:9 |
 
@@ -289,7 +290,7 @@ A auditoria de HTTPS fica de fora localmente (o `vite preview` é HTTP); na Verc
 
 - [ ] Confirmar que pode citar Icatu, AutoAvaliar, RwTech e Going2 (o emprego atual fica de fora até poder ser divulgado)
 - [ ] Trocar as capas provisórias por prints **com dados mascarados** e atualizar os `imageAlt`
-- [ ] Colocar a foto real em `public/images/profile.jpg`
+- [ ] Colocar as fotos reais em `public/images/profile.jpg` (Sobre) e `public/images/hero.jpg` (topo)
 - [ ] Colocar o PDF do TCC em `public/tcc-gustavo-bueno.pdf` e preencher `url: '/tcc-gustavo-bueno.pdf'` (`site.cases` → `tcc`)
 - [ ] Revisar a tradução EN e as respostas do FAQ em `content.ts`
 - [ ] Configurar os 3 segredos da Vercel no GitHub ([DEPLOY.md, passo 6](docs/DEPLOY.md#6-ligar-o-github-actions-à-vercel-portão-de-qualidade)); sem eles, os testes rodam, mas o deploy é pulado

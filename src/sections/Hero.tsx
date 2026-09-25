@@ -1,5 +1,7 @@
 import { ArrowDown, ArrowRight } from 'lucide-react';
+import { Picture } from '../components/Picture';
 import { PillLink } from '../components/PillLink';
+import { site } from '../data/content';
 import { useI18n } from '../hooks/useI18n';
 
 export function Hero() {
@@ -18,30 +20,60 @@ export function Hero() {
       />
 
       <div className="container relative z-10">
-        <p className="mb-6 inline-flex items-center gap-2.5 rounded-full border border-green-500/40 bg-green-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-green-400">
-          <span aria-hidden="true" className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 motion-safe:animate-ping" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-green-400" />
-          </span>
-          {t.hero.availability}
-        </p>
-        <p className="mb-4 text-xl font-light uppercase tracking-widest text-accent md:text-2xl">{t.hero.eyebrow}</p>
+        {/*
+          Uma foto só (um <img>), em dois formatos:
+          - até 1023 px: círculo acima do título (order-first na coluna flex);
+          - a partir de 1024 px: retrato 4:5 na coluna da direita do grid, ao lado do título.
+        */}
+        <div className="flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-10 xl:gap-12 2xl:gap-16">
+          <div>
+            <p className="mb-6 inline-flex items-center gap-2.5 rounded-full border border-green-500/40 bg-green-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-green-400">
+              <span aria-hidden="true" className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75 motion-safe:animate-ping" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-green-400" />
+              </span>
+              {t.hero.availability}
+            </p>
+            <p className="mb-4 text-xl font-light uppercase tracking-widest text-accent md:text-2xl">{t.hero.eyebrow}</p>
 
-        {/* clamp(): "DE QUALIDADE" mede 5,3em em Oswald Bold — 15vw mantém a linha dentro da tela de 320px a 1067px. */}
-        <h1
-          id="hero-title"
-          className="mb-4 font-display text-[clamp(3rem,15vw,10rem)] font-bold uppercase leading-[1] tracking-tighter"
-        >
-          {t.hero.titleLines.map((line) => (
-            <span key={line} className="interactive block transition-colors hover:text-accent">
-              {line}
-            </span>
-          ))}
-        </h1>
-        <p className="flex items-center gap-4 font-display text-2xl font-bold uppercase leading-[1.1] tracking-tight text-accent md:text-4xl">
-          <span aria-hidden="true" className="hidden h-px w-12 shrink-0 bg-accent sm:block" />
-          {t.hero.specialization}
-        </p>
+            {/*
+              A linha mais larga ("DE SOFTWARE") mede 5,04em em Oswald Bold. Cada faixa cabe na largura útil:
+              celular 15vw · tablet até 8,5rem (720 px úteis) · lg 8rem (coluna de ~680 px ao lado da foto)
+              · xl 10rem (coluna de ~860 px).
+            */}
+            <h1
+              id="hero-title"
+              className="mb-4 font-display text-[clamp(3rem,15vw,10rem)] font-bold uppercase leading-[1] tracking-tighter md:text-[min(15vw,8.5rem)] lg:text-[8rem] xl:text-[10rem]"
+            >
+              {t.hero.titleLines.map((line) => (
+                <span key={line} className="interactive block transition-colors hover:text-accent">
+                  {line}
+                </span>
+              ))}
+            </h1>
+            <p className="flex items-center gap-4 font-display text-2xl font-bold uppercase leading-[1.1] tracking-tight text-accent md:text-4xl">
+              <span aria-hidden="true" className="hidden h-px w-12 shrink-0 bg-accent sm:block" />
+              {t.hero.specialization}
+            </p>
+          </div>
+
+          <div className="relative order-first mb-8 self-start lg:order-none lg:mb-0 lg:self-auto">
+            <div
+              aria-hidden="true"
+              className="absolute -inset-3 rounded-full bg-accent/20 blur-2xl lg:-inset-4 lg:rounded-[2rem]"
+            />
+            <div className="relative aspect-square w-24 overflow-hidden rounded-full border-2 border-accent/50 shadow-2xl md:w-32 lg:aspect-[4/5] lg:w-64 lg:rounded-3xl lg:border lg:border-white/15 xl:w-80 2xl:w-96">
+              {/* Acima da dobra: sem lazy-load. No círculo, o recorte sobe para enquadrar o rosto. */}
+              <Picture
+                image={site.heroImage}
+                alt={t.hero.photoAlt}
+                loading="eager"
+                sizes="(min-width: 1536px) 384px, (min-width: 1280px) 320px, (min-width: 1024px) 256px, (min-width: 768px) 128px, 96px"
+                className="h-full w-full object-cover object-[50%_20%] lg:object-center"
+              />
+            </div>
+          </div>
+        </div>
 
         {/* Espaçamento compacto: com o subtítulo, o hero ainda cabe numa tela de 1440×900. */}
         <div className="mt-10 flex flex-col items-start justify-between gap-10 md:mt-12 md:flex-row md:items-end">

@@ -1,10 +1,10 @@
 /**
- * Gera os assets provisórios do site: capas dos cases, foto de perfil, imagem de
- * Open Graph, favicons, manifest e o PDF do CV.
+ * Gera os assets provisórios do site: capas dos cases, foto de perfil, foto do topo,
+ * imagem de Open Graph, favicons, manifest e o PDF do CV.
  *
  *   npm run placeholders                              → cria só o que ainda não existe
  *   npm run placeholders -- --force --only=og,favicons → sobrescreve só esses grupos
- *        grupos: work, profile, og, favicons, cv (--force sempre exige --only)
+ *        grupos: work, profile, hero, og, favicons, cv (--force sempre exige --only)
  *
  * O texto é desenhado como vetor a partir das próprias fontes do site (Oswald e
  * Manrope, via @fontsource), então o resultado é idêntico em qualquer máquina.
@@ -31,7 +31,7 @@ const ONLY = process.argv
 
 // Trava de segurança: --force sem --only sobrescreveria o CV real e as suas fotos.
 if (FORCE && !ONLY) {
-  console.error('placeholders: --force exige --only=<grupos> (work, profile, og, favicons, cv).');
+  console.error('placeholders: --force exige --only=<grupos> (work, profile, hero, og, favicons, cv).');
   process.exit(1);
 }
 
@@ -210,6 +210,20 @@ function profileCover() {
   );
 }
 
+function heroCover() {
+  const W = 800;
+  const H = 1000;
+  return svg(
+    W,
+    H,
+    `${backdrop(W, H, { glowX: '50%', glowY: '30%' })}
+    <circle cx="400" cy="380" r="140" fill="#262626"/>
+    <path d="M130 1000 C130 790 250 680 400 680 C550 680 670 790 670 1000 Z" fill="#262626"/>
+    ${text(fonts.bold, 'SUA FOTO AQUI', 400, 140, 26, { anchor: 'middle', tracking: 0.2, fill: ACCENT })}
+    ${text(fonts.light, 'public/images/hero.jpg · retrato 4:5', 400, 180, 20, { anchor: 'middle', fill: MUTED })}`,
+  );
+}
+
 function ogImage() {
   const W = 1200;
   const H = 630;
@@ -317,6 +331,7 @@ for (const item of CASES) {
   await write('work', `images/${item.file}.jpg`, () => jpeg(workCover(item)));
 }
 await write('profile', 'images/profile.jpg', () => jpeg(profileCover()));
+await write('hero', 'images/hero.jpg', () => jpeg(heroCover()));
 await write('og', 'og-image.jpg', () => jpeg(ogImage()));
 
 await write('favicons', 'favicon.svg', () => faviconSvg());

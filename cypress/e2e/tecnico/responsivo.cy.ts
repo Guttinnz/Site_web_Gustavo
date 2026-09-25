@@ -43,9 +43,37 @@ function shouldNotOverflow(label: string): void {
   });
 }
 
+/**
+ * Foto do topo: a partir de 1024 px fica à direita do título, sem encostar nele; abaixo
+ * disso vira um círculo acima do título. Em qualquer largura, carrega sem lazy-load.
+ */
+function shouldPlaceHeroPhoto(width: number): void {
+  cy.get('#top img')
+    .should('have.attr', 'loading', 'eager')
+    .and(($img) => {
+      expect(($img[0] as HTMLImageElement).naturalWidth, 'foto carregada').to.be.greaterThan(0);
+    });
+  cy.get('#top img').then(($img) => {
+    cy.get('h1').should(($h1) => {
+      const photo = $img[0]?.getBoundingClientRect();
+      const title = $h1[0]?.getBoundingClientRect();
+      if (!photo || !title) throw new Error('foto ou título ausente');
+      expect(photo.right, 'foto dentro da tela').to.be.at.most(width);
+      if (width >= 1024) {
+        expect(photo.left, 'foto à direita do título').to.be.at.least(title.right);
+        expect(photo.top, 'foto na altura do título').to.be.below(title.bottom);
+        expect(photo.height / photo.width, 'retrato 4:5').to.be.closeTo(1.25, 0.02);
+      } else {
+        expect(photo.bottom, 'foto acima do título').to.be.at.most(title.top);
+        expect(photo.width, 'círculo').to.be.closeTo(photo.height, 1);
+      }
+    });
+  });
+}
+
 describe('Layout responsivo', () => {
   VIEWPORTS.forEach(([width, height]) => {
-    it(`${width}×${height}: nada vaza para os lados e a navegação certa aparece`, () => {
+    it(`${width}×${height}: nada vaza para os lados, e a navegação e a foto do topo ficam no lugar certo`, () => {
       cy.viewport(width, height);
       cy.visitSite('/');
       cy.revealAll();
@@ -60,11 +88,15 @@ describe('Layout responsivo', () => {
         cy.get('button[aria-controls="mobile-menu"]').should('be.visible');
       }
 
-      // O título gigante do hero cabe na largura da tela.
+      // O título gigante do hero cabe na largura da tela, sempre em 2 linhas.
       cy.get('h1').should(($h1) => {
         const h1 = $h1[0] as HTMLElement;
+        const fontSize = parseFloat(getComputedStyle(h1).fontSize);
         expect(h1.scrollWidth, 'largura do título').to.be.at.most(h1.clientWidth + 1);
+        expect(h1.getBoundingClientRect().height, 'título em 2 linhas').to.be.at.most(fontSize * 2.2);
       });
+
+      shouldPlaceHeroPhoto(width);
     });
   });
 
