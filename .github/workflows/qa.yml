@@ -183,21 +183,64 @@ jobs:
       name: production
       url: ${{ steps.deploy.outputs.url }}
     env:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       CYPRESS_INSTALL_BINARY: 0
     steps:
       # Enquanto a Vercel não estiver configurada, os testes rodam normalmente e o deploy só avisa.
       - name: Conferir os segredos da Vercel
         id: secrets
+        env:
+          RAW_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          RAW_ORG: ${{ secrets.VERCEL_ORG_ID }}
+          RAW_PROJECT: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+          if [ -z "$RAW_TOKEN" ] || [ -z "$RAW_ORG" ] || [ -z "$RAW_PROJECT" ]; then
             echo "::warning title=Deploy pulado::Configure VERCEL_TOKEN, VERCEL_ORG_ID e VERCEL_PROJECT_ID (docs/DEPLOY.md)."
             echo "ready=false" >> "$GITHUB_OUTPUT"
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
+
+      # Remove espaços e quebras de linha colados junto com os valores e testa o token e os IDs
+      # direto na API da Vercel, com mensagens claras. Os valores nunca aparecem no log.
+      - name: Validar token e IDs da Vercel
+        if: steps.secrets.outputs.ready == 'true'
+        env:
+          RAW_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          RAW_ORG: ${{ secrets.VERCEL_ORG_ID }}
+          RAW_PROJECT: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          clean() { printf '%s' "$1" | tr -d '[:space:]"'"'"; }
+          token=$(clean "$RAW_TOKEN"); org=$(clean "$RAW_ORG"); project=$(clean "$RAW_PROJECT")
+          echo "::add-mask::$token"; echo "::add-mask::$org"; echo "::add-mask::$project"
+          [ "$token" != "$RAW_TOKEN" ] && echo "::notice title=VERCEL_TOKEN ajustado::Havia espaços, aspas ou quebras de linha no valor; foram removidos."
+          [ "$org" != "$RAW_ORG" ] && echo "::notice title=VERCEL_ORG_ID ajustado::Havia espaços, aspas ou quebras de linha no valor; foram removidos."
+          [ "$project" != "$RAW_PROJECT" ] && echo "::notice title=VERCEL_PROJECT_ID ajustado::Havia espaços, aspas ou quebras de linha no valor; foram removidos."
+
+          case "$token" in
+            prj_*|team_*) echo "::error title=VERCEL_TOKEN errado::O valor parece um ID (começa com prj_ ou team_), não um token. Gere um em https://vercel.com/account/settings/tokens."; exit 1 ;;
+          esac
+          case "$project" in
+            prj_*) ;;
+            *) echo "::error title=VERCEL_PROJECT_ID errado::Deveria começar com prj_ (docs/DEPLOY.md, passo 6)."; exit 1 ;;
+          esac
+          case "$org" in
+            team_*) team_query="?teamId=$org" ;;
+            *) echo "::warning title=VERCEL_ORG_ID diferente do esperado::Normalmente começa com team_ (Team ID). Conferindo mesmo assim."; team_query="" ;;
+          esac
+
+          status=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $token" https://api.vercel.com/v2/user)
+          if [ "$status" != "200" ]; then
+            echo "::error title=Token da Vercel recusado (HTTP $status)::O token não é válido, expirou ou foi revogado. Gere outro em https://vercel.com/account/settings/tokens, copie inteiro e salve de novo em VERCEL_TOKEN."
+            exit 1
+          fi
+          status=$(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $token" "https://api.vercel.com/v9/projects/$project$team_query")
+          if [ "$status" != "200" ]; then
+            echo "::error title=Projeto não encontrado (HTTP $status)::O token é válido, mas não enxerga o projeto com esses IDs. Confira VERCEL_PROJECT_ID e VERCEL_ORG_ID, e se o token foi criado com escopo do time que tem o projeto."
+            exit 1
+          fi
+
+          { echo "VERCEL_TOKEN=$token"; echo "VERCEL_ORG_ID=$org"; echo "VERCEL_PROJECT_ID=$project"; } >> "$GITHUB_ENV"
+          echo "Token e IDs da Vercel conferidos."
 
       - uses: actions/checkout@v7
         if: steps.secrets.outputs.ready == 'true'
