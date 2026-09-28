@@ -74,7 +74,7 @@ export function About() {
                 {t.about.title}
               </h2>
 
-              <div className="group relative mt-10 aspect-square w-full max-w-md overflow-hidden rounded-2xl border border-white/10 shadow-2xl">
+              <div className="group relative mt-10 aspect-square w-full max-w-md overflow-hidden rounded-2xl border border-white/10 shadow-2xl lg:mx-auto">
                 <div
                   aria-hidden="true"
                   className="absolute inset-0 z-10 bg-accent/10 mix-blend-overlay transition-colors duration-500 group-hover:bg-transparent"

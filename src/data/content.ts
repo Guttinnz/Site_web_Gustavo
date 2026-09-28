@@ -276,8 +276,8 @@ export const site = {
     runs: 'https://github.com/Guttinnz/Site_web_Gustavo/actions/workflows/qa.yml',
   },
   cv: '/cv-gustavo-bueno.pdf',
-  /** Foto do topo, ao lado do título: retrato 4:5 (no celular vira um círculo). */
-  heroImage: { name: 'hero', width: 800, height: 1000 },
+  /** Foto do topo: retrato 2:3 (rosto, peito e braços). No celular fica atrás do título. */
+  heroImage: { name: 'hero', width: 600, height: 900 },
   profileImage: { name: 'profile', width: 800, height: 800 },
   /**
    * Ordem de exibição dos cases + imagem de cada um (public/images/<name>.jpg).

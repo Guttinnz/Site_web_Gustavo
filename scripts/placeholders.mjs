@@ -168,8 +168,8 @@ const svg = (width, height, body) =>
 /* Assets                                                                          */
 /* ----------------------------------------------------------------------------- */
 
+// work-qa.jpg não entra aqui: é um print real da página /qualidade.
 const CASES = [
-  { file: 'work-qa', index: 'QA', kicker: 'Este portfólio · QA case', lines: ['Este site', 'é testado'], stat: 'Cypress · axe · Lighthouse' },
   { file: 'work-icatu', index: '01', kicker: '2025–2026 · Automação E2E', lines: ['Icatu Seguros', 'Previdência'], stat: '5.200h economizadas' },
   { file: 'work-ivy', index: '02', kicker: '2023–2025 · Multiprojeto', lines: ['Grupo IVY', 'AutoAvaliar · RwTech'], stat: '1.500+ validações' },
   { file: 'work-going2', index: '03', kicker: '2022–2023 · QA / CI', lines: ['Going2', 'Do zero ao pipeline'], stat: 'Cypress + BrowserStack' },
@@ -180,20 +180,19 @@ const CASES = [
 function workCover({ index, kicker, lines, stat }) {
   const W = 1280;
   const H = 720;
-  const titleSize = Math.min(...lines.map((line) => fit(fonts.display, line.toUpperCase(), 104, 1040, -0.02)));
-  const statWidth = measure(fonts.bold, stat, 24) + 96;
+  const titleSize = Math.min(...lines.map((line) => fit(fonts.display, line.toUpperCase(), 128, 1100, -0.02)));
+  const statWidth = measure(fonts.bold, stat, 30) + 116;
   return svg(
     W,
     H,
     `${backdrop(W, H)}
     ${text(fonts.display, index, 1210, 690, 420, { anchor: 'end', fill: 'none', stroke: '#ffffff', strokeOpacity: 0.07, strokeWidth: 2 })}
-    ${text(fonts.bold, kicker.toUpperCase(), 80, 130, 22, { tracking: 0.16, fill: ACCENT })}
-    ${text(fonts.display, lines[0].toUpperCase(), 76, 150 + titleSize, titleSize, { tracking: -0.02, fill: '#ffffff' })}
-    ${text(fonts.display, lines[1].toUpperCase(), 76, 150 + titleSize * 2.05, titleSize, { tracking: -0.02, fill: '#ffffff', fillOpacity: 0.35 })}
-    <rect x="80" y="520" width="${statWidth}" height="64" rx="32" fill="${ACCENT}" fill-opacity="0.12" stroke="${ACCENT}" stroke-opacity="0.5"/>
-    ${checkIcon(106, 540, 24, ACCENT)}
-    ${text(fonts.bold, stat, 148, 561, 24, { fill: '#ffffff' })}
-    ${text(fonts.light, 'Imagem provisória — substitua por um print com dados mascarados', 80, 660, 18, { fill: MUTED })}`,
+    ${text(fonts.bold, kicker.toUpperCase(), 80, 150, 28, { tracking: 0.16, fill: ACCENT })}
+    ${text(fonts.display, lines[0].toUpperCase(), 76, 175 + titleSize, titleSize, { tracking: -0.02, fill: '#ffffff' })}
+    ${text(fonts.display, lines[1].toUpperCase(), 76, 175 + titleSize * 2.05, titleSize, { tracking: -0.02, fill: '#ffffff', fillOpacity: 0.35 })}
+    <rect x="80" y="540" width="${statWidth}" height="80" rx="40" fill="${ACCENT}" fill-opacity="0.12" stroke="${ACCENT}" stroke-opacity="0.5"/>
+    ${checkIcon(110, 565, 30, ACCENT)}
+    ${text(fonts.bold, stat, 160, 591, 30, { fill: '#ffffff' })}`,
   );
 }
 
